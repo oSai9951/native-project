@@ -1,98 +1,164 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect } from 'react';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useAuth } from '@/providers/auth-provider';
+import { LoginForm } from '@/components/login-form';
+import { BiometricPrompt } from '@/components/biometric-prompt';
+import { AuthColors } from '@/constants/colors';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
+export default function IndexScreen() {
+  const { state, logout } = useAuth();
+
+  // Hide splash once auth state is determined
+  useEffect(() => {
+    if (state.status !== 'loading') {
+      SplashScreen.hideAsync();
+    }
+  }, [state.status]);
+
+  /* ── Loading ────────────────────────────────────────────────── */
+  if (state.status === 'loading') {
     return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size="large" color={AuthColors.primary} />
+      </View>
     );
   }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
+
+  /* ── Biometric gate ─────────────────────────────────────────── */
+  if (state.status === 'biometric_prompt') {
+    return <BiometricPrompt />;
+  }
+
+  /* ── Authenticated home ─────────────────────────────────────── */
+  if (state.status === 'authenticated') {
+    return (
+      <View style={styles.centeredContainer}>
+        <View style={styles.homeContent}>
+          <View style={styles.successCircle}>
+            <Text style={styles.successEmoji}>✅</Text>
+          </View>
+
+          <Text style={styles.homeTitle}>You're In!</Text>
+          <Text style={styles.homeSubtitle}>
+            Successfully authenticated. Your tokens are securely stored.
+          </Text>
+
+          {/* Token preview card */}
+          <View style={styles.tokenCard}>
+            <Text style={styles.tokenLabel}>Access Token</Text>
+            <Text style={styles.tokenValue} numberOfLines={1}>
+              {state.accessToken
+                ? `${state.accessToken.slice(0, 32)}…`
+                : '—'}
+            </Text>
+          </View>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.logoutButton,
+              pressed && styles.logoutButtonPressed,
+            ]}
+            onPress={logout}
+          >
+            <Text style={styles.logoutText}>Sign Out</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  /* ── Unauthenticated – login form ───────────────────────────── */
+  return <LoginForm />;
 }
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
-  );
-}
+/* ── Styles ──────────────────────────────────────────────────────── */
 
 const styles = StyleSheet.create({
-  container: {
+  centeredContainer: {
     flex: 1,
+    backgroundColor: AuthColors.background,
     justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    paddingHorizontal: 24,
   },
-  heroSection: {
+  homeContent: {
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 340,
+  },
+  successCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(78, 203, 113, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: AuthColors.success,
   },
-  title: {
+  successEmoji: { fontSize: 40 },
+  homeTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: AuthColors.text,
+    marginBottom: 8,
+  },
+  homeSubtitle: {
+    fontSize: 16,
+    color: AuthColors.textSecondary,
     textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
   },
-  code: {
+  tokenCard: {
+    width: '100%',
+    backgroundColor: AuthColors.surface,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 32,
+    borderWidth: 1,
+    borderColor: AuthColors.inputBorder,
+  },
+  tokenLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: AuthColors.textSecondary,
     textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 6,
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  tokenValue: {
+    fontSize: 14,
+    color: AuthColors.textMuted,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  logoutButton: {
+    width: '100%',
+    height: 52,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 107, 0.3)',
+    backgroundColor: 'rgba(255, 107, 107, 0.08)',
+  },
+  logoutButtonPressed: {
+    backgroundColor: 'rgba(255, 107, 107, 0.15)',
+    transform: [{ scale: 0.98 }],
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: AuthColors.error,
   },
 });

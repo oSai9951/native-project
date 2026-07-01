@@ -1,0 +1,16 @@
+export const AuthColors = {
+  background: '#0F0F23',
+  surface: '#1A1A2E',
+  surfaceLight: '#252542',
+  primary: '#6C63FF',
+  primaryDark: '#5A52D5',
+  text: '#FFFFFF',
+  textSecondary: 'rgba(255, 255, 255, 0.6)',
+  textMuted: 'rgba(255, 255, 255, 0.35)',
+  inputBg: 'rgba(255, 255, 255, 0.06)',
+  inputBorder: 'rgba(255, 255, 255, 0.12)',
+  inputBorderFocused: 'rgba(108, 99, 255, 0.5)',
+  error: '#FF6B6B',
+  errorBg: 'rgba(255, 107, 107, 0.1)',
+  success: '#4ECB71',
+} as const;
