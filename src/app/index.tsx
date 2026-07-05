@@ -1,164 +1,192 @@
-import { useEffect } from 'react';
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import * as SplashScreen from 'expo-splash-screen';
+import React, { useEffect, useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { router } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import * as LocalAuthentication from "expo-local-authentication";
+import { LinearGradient } from "expo-linear-gradient";
+import Login from "@/components/login/Login";
+import Colors from "@/constants/Colors";
+import { useLoading } from "@/providers/LoadingProvider";
+import { simulateRefresh } from "@/utils/auth-api";
 
-import { useAuth } from '@/providers/auth-provider';
-import { LoginForm } from '@/components/login-form';
-import { BiometricPrompt } from '@/components/biometric-prompt';
-import { AuthColors } from '@/constants/colors';
+export default function Index() {
+  const [hasToken, setHasToken] = useState<boolean | null>(null); // null means checking
+  const { showLoader, hideLoader } = useLoading();
 
-export default function IndexScreen() {
-  const { state, logout } = useAuth();
-
-  // Hide splash once auth state is determined
   useEffect(() => {
-    if (state.status !== 'loading') {
-      SplashScreen.hideAsync();
+    checkToken();
+  }, []);
+
+  const checkToken = async () => {
+    try {
+      const token = await SecureStore.getItemAsync("refreshToken");
+      if (token) {
+        setHasToken(true);
+        // Prompt biometric unlock immediately after loader hides
+        triggerBiometric(token);
+      } else {
+        setHasToken(false);
+      }
+    } catch (e) {
+      setHasToken(false);
     }
-  }, [state.status]);
+  };
 
-  /* ── Loading ────────────────────────────────────────────────── */
-  if (state.status === 'loading') {
+  const triggerBiometric = async (token: string) => {
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!hasHardware || !isEnrolled) {
+        // Fallback: Clear invalid/unusable token and direct to login
+        await SecureStore.deleteItemAsync("refreshToken");
+        setHasToken(false);
+        return;
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Unlock CashPay",
+        cancelLabel: "Use Password",
+        disableDeviceFallback: true,
+      });
+
+      if (result.success) {
+        showLoader("Verifying secure token...");
+        // Request token refresh simulation from helper
+        const tokens = await simulateRefresh(token);
+        await SecureStore.setItemAsync("refreshToken", tokens.refreshToken);
+        hideLoader();
+        
+        // Bypass login and onboarding, go straight to home
+        router.replace("/home");
+      }
+    } catch (e) {
+      hideLoader();
+      Alert.alert("Authentication Error", "Something went wrong during biometric unlock.");
+    }
+  };
+
+  const handleUsePassword = async () => {
+    await SecureStore.deleteItemAsync("refreshToken");
+    setHasToken(false);
+  };
+
+  const handleRetry = async () => {
+    const token = await SecureStore.getItemAsync("refreshToken");
+    if (token) {
+      triggerBiometric(token);
+    } else {
+      setHasToken(false);
+    }
+  };
+
+  // Still checking for token availability
+  if (hasToken === null) {
     return (
-      <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" color={AuthColors.primary} />
-      </View>
+      <LinearGradient colors={Colors.bgGradient} style={styles.container}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </LinearGradient>
     );
   }
 
-  /* ── Biometric gate ─────────────────────────────────────────── */
-  if (state.status === 'biometric_prompt') {
-    return <BiometricPrompt />;
+  // No active token found: show standard Login form
+  if (!hasToken) {
+    return <Login />;
   }
 
-  /* ── Authenticated home ─────────────────────────────────────── */
-  if (state.status === 'authenticated') {
-    return (
-      <View style={styles.centeredContainer}>
-        <View style={styles.homeContent}>
-          <View style={styles.successCircle}>
-            <Text style={styles.successEmoji}>✅</Text>
-          </View>
-
-          <Text style={styles.homeTitle}>You're In!</Text>
-          <Text style={styles.homeSubtitle}>
-            Successfully authenticated. Your tokens are securely stored.
-          </Text>
-
-          {/* Token preview card */}
-          <View style={styles.tokenCard}>
-            <Text style={styles.tokenLabel}>Access Token</Text>
-            <Text style={styles.tokenValue} numberOfLines={1}>
-              {state.accessToken
-                ? `${state.accessToken.slice(0, 32)}…`
-                : '—'}
-            </Text>
-          </View>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.logoutButton,
-              pressed && styles.logoutButtonPressed,
-            ]}
-            onPress={logout}
-          >
-            <Text style={styles.logoutText}>Sign Out</Text>
-          </Pressable>
+  // Token found but biometric was cancelled or pending unlock
+  return (
+    <LinearGradient colors={Colors.bgGradient} style={styles.container}>
+      <View style={styles.content}>
+        <View style={styles.lockContainer}>
+          <Text style={styles.lockIcon}>🔐</Text>
         </View>
-      </View>
-    );
-  }
 
-  /* ── Unauthenticated – login form ───────────────────────────── */
-  return <LoginForm />;
+        <Text style={styles.title}>CashPay is Locked</Text>
+        <Text style={styles.subtitle}>
+          Verify your face recognition or fingerprint scanner to safely unlock your account.
+        </Text>
+
+        <TouchableOpacity style={styles.retryButton} onPress={handleRetry} activeOpacity={0.8}>
+          <Text style={styles.retryButtonText}>Tap to Unlock</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.passwordButton} onPress={handleUsePassword} activeOpacity={0.7}>
+          <Text style={styles.passwordButtonText}>Log In with Password</Text>
+        </TouchableOpacity>
+      </View>
+    </LinearGradient>
+  );
 }
 
-/* ── Styles ──────────────────────────────────────────────────────── */
-
 const styles = StyleSheet.create({
-  centeredContainer: {
+  container: {
     flex: 1,
-    backgroundColor: AuthColors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
   },
-  homeContent: {
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 340,
+  content: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  successCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: 'rgba(78, 203, 113, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  lockContainer: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: "rgba(76, 59, 255, 0.08)",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 24,
-    borderWidth: 2,
-    borderColor: AuthColors.success,
+    borderWidth: 1.5,
+    borderColor: "rgba(76, 59, 255, 0.15)",
   },
-  successEmoji: { fontSize: 40 },
-  homeTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: AuthColors.text,
-    marginBottom: 8,
+  lockIcon: {
+    fontSize: 40,
   },
-  homeSubtitle: {
-    fontSize: 16,
-    color: AuthColors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
+  title: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: Colors.text,
+    marginBottom: 10,
+    letterSpacing: 0.5,
   },
-  tokenCard: {
-    width: '100%',
-    backgroundColor: AuthColors.surface,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 32,
-    borderWidth: 1,
-    borderColor: AuthColors.inputBorder,
-  },
-  tokenLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: AuthColors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 6,
-  },
-  tokenValue: {
+  subtitle: {
     fontSize: 14,
-    color: AuthColors.textMuted,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    color: Colors.textMuted,
+    textAlign: "center",
+    lineHeight: 22,
+    paddingHorizontal: 20,
+    marginBottom: 40,
   },
-  logoutButton: {
-    width: '100%',
+  retryButton: {
+    width: "80%",
     height: 52,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 107, 107, 0.3)',
-    backgroundColor: 'rgba(255, 107, 107, 0.08)',
+    backgroundColor: "#111111",
+    borderRadius: 26,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    marginBottom: 16,
   },
-  logoutButtonPressed: {
-    backgroundColor: 'rgba(255, 107, 107, 0.15)',
-    transform: [{ scale: 0.98 }],
+  retryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
-  logoutText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: AuthColors.error,
+  passwordButton: {
+    paddingVertical: 12,
+  },
+  passwordButtonText: {
+    color: Colors.primary,
+    fontSize: 14,
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
 });
