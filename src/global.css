@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base style resets and defaults */
+:root {
+  --color-btn-dark: #0b0b0b;
+  --color-btn-dark-hover: #1f1f1f;
+  --color-btn-dark-text: #ffffff;
+  --app-bg-gradient: linear-gradient(90deg, #c1d3c9 0%, #d8e6eb 33%, #f6e5ed 66%, #fffdd1 100%);
+  --font-primary: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+}
+
+body {
+  background: var(--app-bg-gradient);
+  background-attachment: fixed;
+  font-family: var(--font-primary);
+  color: #0b0b0b;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* Custom layout helper for the horizontal background gradient */
+.bg-app-horizontal {
+  background: var(--app-bg-gradient);
+}
+
+/* Pill-shaped button styling matching the Sign In button from the first screenshot */
+.btn-primary-dark {
+  background-color: var(--color-btn-dark);
+  color: var(--color-btn-dark-text);
+  font-family: var(--font-primary);
+  font-weight: 600;
+  border-radius: 9999px; /* Pill shape */
+  padding: 14px 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease-in-out;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.btn-primary-dark:hover {
+  background-color: var(--color-btn-dark-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.btn-primary-dark:active {
+  transform: translateY(0);
+}

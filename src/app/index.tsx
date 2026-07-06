@@ -4,8 +4,8 @@ import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import * as LocalAuthentication from "expo-local-authentication";
 import { LinearGradient } from "expo-linear-gradient";
-import Login from "@/components/login/Login";
-import Colors from "@/constants/Colors";
+import SignIn from "@/signIn/components/SignIn";
+import Colors from "@/constants/colors";
 import { useLoading } from "@/providers/LoadingProvider";
 import { simulateRefresh } from "@/utils/auth-api";
 
@@ -91,7 +91,7 @@ export default function Index() {
 
   // No active token found: show standard Login form
   if (!hasToken) {
-    return <Login />;
+    return <SignIn />;
   }
 
   // Token found but biometric was cancelled or pending unlock

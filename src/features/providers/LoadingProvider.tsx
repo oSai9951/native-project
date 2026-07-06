@@ -6,7 +6,7 @@ import Animated, {
   withTiming,
   runOnJS,
 } from "react-native-reanimated";
-import Loader from "@/components/Loader";
+import Loader from "@/loaders/Loader";
 
 interface LoadingContextType {
   isLoading: boolean;
