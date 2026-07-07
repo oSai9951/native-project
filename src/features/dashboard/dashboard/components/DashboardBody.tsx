@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -9,8 +9,15 @@ import GoalsCard from "./GoalsCard";
 import CalendarSlider from "./CalendarSlider";
 import AcademicOverview from "./AcademicOverview";
 import QuickActions from "./QuickActions";
+import ProfileSideSheet from "@/profile/components/ProfileSideSheet";
 
-export default function DashboardBody() {
+interface DashboardBodyProps {
+  onViewProfile?: () => void;
+}
+
+export default function DashboardBody({ onViewProfile }: DashboardBodyProps) {
+  const [showProfileSheet, setShowProfileSheet] = useState(false);
+
   return (
     <LinearGradient 
       colors={["#c1d3c9", "#d8e6eb", "#f6e5ed", "#fffdd1"]}
@@ -21,7 +28,11 @@ export default function DashboardBody() {
       <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
         {/* Custom Header */}
         <View className="flex-row justify-between items-center px-4 py-3">
-          <View className="flex-row items-center">
+          <TouchableOpacity
+            onPress={() => setShowProfileSheet(true)}
+            className="flex-row items-center"
+            activeOpacity={0.8}
+          >
             {/* User Avatar Circle */}
             <View className="w-9 h-9 rounded-full border border-slate-200 overflow-hidden bg-slate-200 flex items-center justify-center mr-3">
               <Text className="text-base">👩‍🏫</Text>
@@ -29,7 +40,7 @@ export default function DashboardBody() {
             <Text className="text-base font-bold text-slate-800 font-sans">
               Keelie
             </Text>
-          </View>
+          </TouchableOpacity>
           
           {/* Bell Notifications Button */}
           <TouchableOpacity className="w-8 h-8 rounded-full bg-white/20 items-center justify-center border border-white/30">
@@ -64,6 +75,15 @@ export default function DashboardBody() {
           <QuickActions />
         </ScrollView>
       </SafeAreaView>
+
+      <ProfileSideSheet
+        visible={showProfileSheet}
+        onClose={() => setShowProfileSheet(false)}
+        onViewProfile={() => {
+          setShowProfileSheet(false);
+          onViewProfile?.();
+        }}
+      />
     </LinearGradient>
   );
 }

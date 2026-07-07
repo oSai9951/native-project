@@ -359,6 +359,61 @@ export const STUDENT_RATINGS_DATA: StudentRatingItem[] = [
   },
 ];
 
+export interface RoomMessageItem {
+  id: string;
+  sender: "student" | "teacher";
+  name: string;
+  initials: string;
+  avatarBgColor: string;
+  avatarTextColor: string;
+  message: string;
+  time: string;
+  attachment?: {
+    name: string;
+    meta: string;
+  };
+}
+
+export const ROOM_MESSAGES_DATA: RoomMessageItem[] = [
+  {
+    id: "1",
+    sender: "student",
+    name: "Aanya Sharma",
+    initials: "AS",
+    avatarBgColor: "bg-secondary-fixed",
+    avatarTextColor: "text-on-secondary-fixed",
+    message:
+      "Hello Teacher! I have finished the extra credit assignments. Should I upload them here or in the resources folder?",
+    time: "10:12 AM",
+  },
+  {
+    id: "2",
+    sender: "teacher",
+    name: "Mx. Robertson",
+    initials: "MR",
+    avatarBgColor: "",
+    avatarTextColor: "",
+    message:
+      "Great work Aanya! Please upload them to the shared folder so everyone can see your methodology. I've also attached the notes from this morning's session for those who missed the live stream.",
+    time: "10:15 AM",
+    attachment: {
+      name: "Calculus_Notes.pdf",
+      meta: "PDF · 2.4 MB",
+    },
+  },
+  {
+    id: "3",
+    sender: "student",
+    name: "Rahul Jain",
+    initials: "RJ",
+    avatarBgColor: "bg-tertiary-fixed",
+    avatarTextColor: "text-on-tertiary-fixed",
+    message:
+      "Thank you! The notes are very helpful. Will the quiz on Friday cover the new differentiation topics?",
+    time: "10:18 AM",
+  },
+];
+
 export interface AttendanceStudent {
   id: string;
   name: string;

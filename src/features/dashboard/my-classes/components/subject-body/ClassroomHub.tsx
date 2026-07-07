@@ -12,9 +12,10 @@ interface ClassroomHubProps {
   onOpenTests: () => void;
   onOpenRatings: () => void;
   onOpenAttendance: () => void;
+  onOpenRoom: () => void;
 }
 
-export default function ClassroomHub({ classId, onBack, onOpenMaterials, onOpenChat, onOpenTests, onOpenRatings, onOpenAttendance }: ClassroomHubProps) {
+export default function ClassroomHub({ classId, onBack, onOpenMaterials, onOpenChat, onOpenTests, onOpenRatings, onOpenAttendance, onOpenRoom }: ClassroomHubProps) {
   // Find the selected class details from the mock database
   const selectedClass = MY_CLASSES_DATA.classes.find((item) => item.id === classId) || MY_CLASSES_DATA.classes[0];
 
@@ -266,7 +267,8 @@ export default function ClassroomHub({ classId, onBack, onOpenMaterials, onOpenC
               </TouchableOpacity>
 
               {/* Room */}
-              <TouchableOpacity 
+              <TouchableOpacity
+                onPress={onOpenRoom}
                 className="w-1/2 px-1.5 mb-3"
                 activeOpacity={0.8}
               >

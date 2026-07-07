@@ -10,6 +10,9 @@ import ClassroomChat from "@/dashboard/my-classes/components/classroom-chat/Clas
 import TestManagement from "@/dashboard/my-classes/components/test-management/TestManagement";
 import StudentsRating from "@/dashboard/my-classes/components/students-rating/StudentsRating";
 import StudentAttendance from "@/dashboard/my-classes/components/StudentAttendance";
+import ClassroomRoom from "@/dashboard/my-classes/components/rooms/ClassroomRoom";
+import AiAssistantBody from "@/dashboard/AI-assistant/components/AiAssistantBody";
+import ProfileAccountScreen from "@/profile/components/ProfileAccountScreen";
 
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState("home");
@@ -19,6 +22,7 @@ export default function HomeScreen() {
   const [showTests, setShowTests] = useState(false);
   const [showRatings, setShowRatings] = useState(false);
   const [showAttendance, setShowAttendance] = useState(false);
+  const [showRoom, setShowRoom] = useState(false);
   const insets = useSafeAreaInsets();
 
   const tabs = [
@@ -66,16 +70,24 @@ export default function HomeScreen() {
         }
         if (showAttendance) {
           return (
-            <StudentAttendance 
-              classId={selectedClassId} 
-              onBack={() => setShowAttendance(false)} 
+            <StudentAttendance
+              classId={selectedClassId}
+              onBack={() => setShowAttendance(false)}
+            />
+          );
+        }
+        if (showRoom) {
+          return (
+            <ClassroomRoom
+              classId={selectedClassId}
+              onBack={() => setShowRoom(false)}
             />
           );
         }
         return (
-          <ClassroomHub 
-            classId={selectedClassId} 
-            onBack={() => setSelectedClassId(null)} 
+          <ClassroomHub
+            classId={selectedClassId}
+            onBack={() => setSelectedClassId(null)}
             onOpenMaterials={() => {
               console.log("home.tsx: toggling showMaterials -> true");
               setShowMaterials(true);
@@ -96,12 +108,22 @@ export default function HomeScreen() {
               console.log("home.tsx: toggling showAttendance -> true");
               setShowAttendance(true);
             }}
+            onOpenRoom={() => {
+              console.log("home.tsx: toggling showRoom -> true");
+              setShowRoom(true);
+            }}
           />
         );
       }
       return <MyClassesBody onSelectClass={(id) => setSelectedClassId(id)} />;
     }
-    return <DashboardBody />;
+    if (activeTab === "assistant") {
+      return <AiAssistantBody onBack={() => setActiveTab("home")} />;
+    }
+    if (activeTab === "account") {
+      return <ProfileAccountScreen onBack={() => setActiveTab("home")} />;
+    }
+    return <DashboardBody onViewProfile={() => setActiveTab("account")} />;
   };
 
   return (
@@ -149,6 +171,7 @@ export default function HomeScreen() {
                 setShowTests(false);
                 setShowRatings(false);
                 setShowAttendance(false);
+                setShowRoom(false);
               }}
               style={{
                 alignItems: "center",
