@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { LoadingProvider, useLoading } from "@/providers/LoadingProvider";
-// If using Expo Router, import your CSS file in the src/app/_layout.tsx file
 import '../global.css';
 
 // Prevent the splash screen from auto-hiding before our custom loader is mounted.
